@@ -6,11 +6,12 @@ Everything runs in your browser. Nothing you quote, and none of your brand files
 
 ## Install (about 2 minutes)
 
-1. Unzip the Quote Cards folder somewhere you'll keep it, like your Documents folder. Chrome reads the extension from this folder, so don't delete or move it afterward.
-2. In Chrome, go to `chrome://extensions`.
-3. Turn on **Developer mode** (the switch in the top right).
-4. Click **Load unpacked** and choose the folder.
-5. Optional: click the puzzle-piece icon in Chrome's toolbar and pin **Quote Cards**.
+1. On this project's GitHub page, click the green **Code** button, then **Download ZIP**.
+2. Unzip it somewhere you'll keep it, like your Documents folder. The folder is called `quote-cards-main`. Chrome reads the extension from this folder, so don't delete or move it afterward.
+3. In Chrome, go to `chrome://extensions`.
+4. Turn on **Developer mode** (the switch in the top right).
+5. Click **Load unpacked** and choose the `quote-cards-main` folder. If there's another `quote-cards-main` folder inside it, choose that inner one. The right folder has `manifest.json` in it.
+6. Optional: click the puzzle-piece icon in Chrome's toolbar and pin **Quote Cards**.
 
 The brand editor opens by itself the first time.
 
@@ -49,9 +50,9 @@ Exporting is also a good backup. Brands live in your Chrome on this computer onl
 
 ## Updating to a new version
 
-When you get a new copy of the folder:
-1. Replace the old folder's files with the new ones, keeping the same folder.
-2. Go to `chrome://extensions` and click the circular reload arrow on Quote Cards.
+1. Download the ZIP again (step 1 above) and unzip it.
+2. Copy the new files into your existing Quote Cards folder, replacing the old ones. Keep using the same folder.
+3. Go to `chrome://extensions` and click the circular reload arrow on Quote Cards.
 
 Your brands are kept.
 
