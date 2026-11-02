@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quote Card Maker</title>
+
+<!--
+  QUOTE CARD MAKER
+  ────────────────
+  How the pieces fit:
+    1. <style>          how the page around the card looks (not the card itself)
+    2. brands/*.js      one file per brand: colors, fonts, logo, extras
+    3. <body>           the controls on the left and the preview on the right
+    4. card-maker.js    reads the chosen brand and draws the card
+
+  The card is drawn on a <canvas>, a blank rectangle of pixels that JavaScript
+  paints on. Painting it ourselves (instead of styling HTML) is what lets us
+  save it as a real PNG image.
+-->
+
+<style>
+  :root {
+    --bg: #f4f4f2;
+    --panel: #ffffff;
+    --text: #1d1d1b;
+    --muted: #6b6b66;
+    --line: #e2e2dd;
+    --accent: #1d1d1b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.45 "Segoe UI", system-ui, sans-serif;
+  }
+  .app {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; padding: 16px; }
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    align-self: start;
+  }
+  h1 { font-size: 18px; margin: 0 0 16px; }
+  label { display: block; font-weight: 600; font-size: 13px; margin: 16px 0 6px; }
+  label.check { font-weight: 400; margin: 8px 0 0; }
+  .hint { color: var(--muted); font-weight: 400; }
+  textarea, input[type=text], select {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font: inherit;
+    background: #fff;
+  }
+  textarea { min-height: 140px; resize: vertical; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .swatch {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    outline: 1px solid var(--line);
+    cursor: pointer;
+    padding: 0;
+  }
+  .swatch.selected { border-color: #fff; outline: 2px solid var(--accent); }
+  input[type=color] { width: 40px; height: 34px; border: none; background: none; padding: 0; cursor: pointer; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; min-width: 0; }
+  .hidden { display: none !important; }
+  .link-row { display: flex; gap: 8px; }
+  .link-row input { flex: 1; min-width: 0; }
+  button.small {
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .buttons { display: flex; gap: 8px; margin-top: 20px; }
+  button.action {
+    flex: 1;
+    padding: 11px;
+    border: none;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--accent);
+    color: #fff;
+  }
+  button.action.secondary { background: #fff; color: var(--text); border: 1px solid var(--line); }
+  #status { min-height: 20px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  #warning:empty { display: none; }
+  #warning {
+    margin-top: 16px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: #fdf1e7;
+    border: 1px solid #f0c9a6;
+    color: #8a4a12;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .preview {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  /* The canvas is drawn at full resolution (e.g. 1080px) but shown shrunk to fit. */
+  canvas {
+    max-width: 100%;
+    max-height: calc(100vh - 48px);
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 6px 30px rgba(0,0,0,.12);
+  }
+  .label-row { display: flex; justify-content: space-between; align-items: baseline; }
+  .label-row a { font-size: 13px; color: var(--muted); }
+
+  /* Preview mode, inside the brand editor: just the card. */
+  body.embed { background: transparent; }
+  body.embed .panel { display: none; }
+  body.embed .app { display: block; padding: 0; }
+  body.embed canvas { max-height: none; width: 100%; box-shadow: none; }
+</style>
+
+<!-- Brand files call registerBrand(), so registry.js has to load first. -->
+<script src="brands/registry.js"></script>
+
+<!-- Built-in brands. Brands people make live in storage, loaded by brand-store.js. -->
+<script src="brands/plain.js"></script>
+<script src="brand-store.js"></script>
+</head>
+
+<body>
+<div class="app">
+
+  <!-- ── Controls ─────────────────────────────────────────── -->
+  <div class="panel">
+    <h1>Quote Card Maker</h1>
+
+    <div class="label-row">
+      <label for="brand">Brand</label>
+      <a href="editor.html" target="_blank">Add or edit brands</a>
+    </div>
+    <select id="brand"></select>
+
+    <label for="quote">Quote</label>
+    <textarea id="quote">Paste a quote here. Pick a color and a size, then copy or download the card.</textarea>
+
+    <label for="source">Attribution <span class="hint">(optional)</span></label>
+    <input type="text" id="source" placeholder="e.g. Jane Smith, Example Weekly">
+
+    <label for="link">Source link <span class="hint">(for your post, not the card)</span></label>
+    <div class="link-row">
+      <input type="text" id="link" placeholder="https://…">
+      <button class="small" id="copyLinkBtn">Copy link</button>
+    </div>
+
+    <div id="cornerBox">
+      <label for="corner">Corner text <span class="hint">(optional, e.g. your site)</span></label>
+      <input type="text" id="corner" placeholder="e.g. yoursite.com">
+    </div>
+
+    <label>Background</label>
+    <div class="swatches" id="swatches"></div>
+
+    <div class="row">
+      <div>
+        <label for="size">Size</label>
+        <select id="size">
+          <option value="1080x1080">Square 1080×1080</option>
+          <option value="1080x1350">Portrait 1080×1350</option>
+          <option value="1200x627">Landscape 1200×627</option>
+          <option value="1080x1920">Story 1080×1920</option>
+        </select>
+      </div>
+      <div id="fontBox">
+        <label for="font">Font</label>
+        <select id="font"></select>
+      </div>
+    </div>
+
+    <label class="check"><input type="checkbox" id="showMark" checked> Quote mark</label>
+    <label class="check" id="chevronBox"><input type="checkbox" id="showChevron" checked> Chevrons</label>
+    <label class="check" id="footerBox"><input type="checkbox" id="showFooter" checked> Logo footer</label>
+
+    <div id="warning"></div>
+
+    <div class="buttons">
+      <button class="action" id="copyBtn">Copy image</button>
+      <button class="action secondary" id="downloadBtn">Download PNG</button>
+    </div>
+    <div id="status"></div>
+  </div>
+
+  <!-- ── Preview ──────────────────────────────────────────── -->
+  <div class="preview">
+    <canvas id="card"></canvas>
+  </div>
+
+</div>
+
+<script src="card-maker.js"></script>
+</body>
+</html>

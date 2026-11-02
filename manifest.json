@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Quote Cards",
+  "version": "1.0.0",
+  "description": "Highlight text on any page and turn it into a shareable quote card in your own brand.",
+
+  "permissions": ["contextMenus", "activeTab", "scripting", "clipboardWrite", "storage"],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "options_page": "editor.html",
+
+  "action": {
+    "default_title": "Open the quote card maker"
+  },
+
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}
